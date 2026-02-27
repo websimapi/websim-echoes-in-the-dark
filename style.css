@@ -1,0 +1,174 @@
+:root {
+    --text-color: #e0e0e0;
+    --bg-color: #050505;
+    --accent: #00ff88;
+    --warning: #ff3333;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: opacity 0.5s ease;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.active {
+    opacity: 1;
+    z-index: 10;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+.instruction {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+}
+
+button {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 15px 30px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+button:active {
+    background: var(--accent);
+    color: var(--bg-color);
+}
+
+#loading {
+    margin-top: 20px;
+    color: var(--accent);
+    animation: blink 1s infinite;
+}
+
+/* Video/Canvas positioning - purely for logic, hidden or dimmed in UI */
+#input_video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    opacity: 0; /* Hidden from view, but active */
+    pointer-events: none;
+}
+
+#output_canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    opacity: 0.3; /* Subtle visualization of tracking */
+    border: 1px solid #333;
+    border-radius: 50%;
+}
+
+#status-overlay {
+    position: relative;
+    z-index: 20;
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border: 1px solid var(--warning);
+    color: var(--warning);
+    font-weight: bold;
+    display: none; /* Shown via JS when eyes are open */
+}
+
+.eyes-closed #status-overlay {
+    display: none;
+}
+
+.eyes-open #status-overlay {
+    display: block;
+    animation: pulseWarning 0.5s infinite alternate;
+}
+
+.eyes-closed #output_canvas {
+    opacity: 0.1;
+    border-color: var(--accent);
+}
+
+#gesture-feedback {
+    position: fixed;
+    bottom: 50px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+@keyframes pulseWarning {
+    from { box-shadow: 0 0 10px var(--warning); }
+    to { box-shadow: 0 0 30px var(--warning); }
+}
+
+/* Visualizer bars */
+#visualizer {
+    position: fixed;
+    bottom: 20px;
+    display: flex;
+    gap: 5px;
+    height: 50px;
+    align-items: flex-end;
+}
+.bar {
+    width: 10px;
+    background: var(--accent);
+    animation: bounce 1s infinite ease-in-out;
+}
+.bar:nth-child(2) { animation-delay: 0.1s; height: 30px; }
+.bar:nth-child(3) { animation-delay: 0.2s; height: 40px; }
+
+@keyframes bounce {
+    0%, 100% { transform: scaleY(0.2); opacity: 0.3; }
+    50% { transform: scaleY(1); opacity: 0.8; }
+}
