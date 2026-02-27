@@ -69,6 +69,10 @@ function startGame() {
     audio.startAmbience();
     ui.status.innerText = "CLOSE YOUR EYES TO BEGIN";
     ui.status.style.display = 'block';
+
+    // Set state to PAUSED so that closing eyes triggers the start
+    currentState = appState.PAUSED_EYES_OPEN;
+    console.log("Game Started. Waiting for eyes to close...");
 }
 
 // --- Vision Callbacks ---

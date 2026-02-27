@@ -15,10 +15,16 @@ export class VisionSystem {
         this.lastGestureTime = 0;
         this.GESTURE_COOLDOWN = 1500;
         
+        // Stability for eyes
+        this.eyesClosedCounter = 0;
+        this.EYES_CLOSED_FRAMES = 8; // Require ~250ms of closed eyes to trigger
+
         // Thresholds
-        this.EAR_THRESHOLD = 0.25; 
+        this.EAR_THRESHOLD = 0.22; // Slightly stricter to avoid false positives
         this.TURN_THRESHOLD = 0.15;
         this.NOD_THRESHOLD = 0.08; 
+        
+        this.currentEAR = 0; // For debug display
     }
 
     async init() {
@@ -90,12 +96,24 @@ export class VisionSystem {
         const leftOpen = this.getDistance(leftEyeTop, leftEyeBottom) / this.getDistance(leftEyeInner, leftEyeOuter);
         const rightOpen = this.getDistance(rightEyeTop, rightEyeBottom) / this.getDistance(rightEyeInner, rightEyeOuter);
 
-        const avgOpen = (leftOpen + rightOpen) / 2;
-        const isClosed = avgOpen < this.EAR_THRESHOLD;
+        this.currentEAR = (leftOpen + rightOpen) / 2;
+        const rawClosed = this.currentEAR < this.EAR_THRESHOLD;
 
-        if (isClosed !== this.eyesClosed) {
-            this.eyesClosed = isClosed;
-            this.onEyeStatusChange(isClosed);
+        // Debounce logic: prevent blinks from triggering state changes
+        if (rawClosed) {
+            this.eyesClosedCounter++;
+        } else {
+            this.eyesClosedCounter = 0;
+        }
+
+        // Only consider "closed" if held for multiple frames
+        // But instant "open" if raw detection says open
+        const stableClosed = rawClosed && (this.eyesClosedCounter > this.EYES_CLOSED_FRAMES);
+
+        if (stableClosed !== this.eyesClosed) {
+            this.eyesClosed = stableClosed;
+            console.log(`Eye Status Changed: ${stableClosed ? "CLOSED" : "OPEN"} (EAR: ${this.currentEAR.toFixed(3)})`);
+            this.onEyeStatusChange(stableClosed);
         }
     }
 
@@ -160,6 +178,17 @@ export class VisionSystem {
         // Draw Eyes outline roughly
         this.drawEye(landmarks, [33, 160, 158, 133, 153, 144]);
         this.drawEye(landmarks, [362, 385, 387, 263, 373, 380]);
+
+        // Draw Debug Stats
+        this.ctx.font = "16px monospace";
+        this.ctx.fillStyle = this.eyesClosed ? "#00ff00" : "#ff3333";
+        this.ctx.fillText(`EAR: ${this.currentEAR.toFixed(3)}`, 10, 30);
+        this.ctx.fillText(`Status: ${this.eyesClosed ? "CLOSED" : "OPEN"}`, 10, 50);
+        
+        if (this.currentEAR < this.EAR_THRESHOLD && !this.eyesClosed) {
+             this.ctx.fillStyle = "yellow";
+             this.ctx.fillText(`Holding: ${this.eyesClosedCounter}/${this.EYES_CLOSED_FRAMES}`, 10, 70);
+        }
     }
 
     drawEye(landmarks, indices) {
