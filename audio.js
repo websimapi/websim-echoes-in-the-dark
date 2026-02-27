@@ -19,6 +19,25 @@ export class AudioManager {
         this.ambience.play().catch(e => console.log("Audio play failed", e));
     }
 
+    playCue() {
+        // A subtle "listen" cue - low frequency thrum
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.3);
+        
+        gain.gain.setValueAtTime(0, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+        
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+    }
+
     pauseAmbience() {
         this.ambience.pause();
     }

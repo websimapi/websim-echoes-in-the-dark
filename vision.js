@@ -20,7 +20,7 @@ export class VisionSystem {
         this.EYES_CLOSED_FRAMES = 6; // Faster reaction (~200ms)
 
         // Thresholds
-        this.EAR_THRESHOLD = 0.26; // Increased to catch eyes that aren't perfectly shut (more forgiving)
+        this.EAR_THRESHOLD = 0.30; // Increased to catch eyes that aren't perfectly shut (more forgiving)
         this.TURN_THRESHOLD = 0.15;
         this.NOD_THRESHOLD = 0.08; 
         
@@ -155,6 +155,10 @@ export class VisionSystem {
     triggerGesture(name) {
         this.lastGestureTime = Date.now();
         this.onGestureDetected(name);
+    }
+
+    resetGestureCooldown() {
+        this.lastGestureTime = 0;
     }
 
     drawDebug(landmarks) {

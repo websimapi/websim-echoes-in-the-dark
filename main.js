@@ -5,12 +5,15 @@ import { Narrator } from './ai.js';
 const appState = {
     WAITING_START: 0,
     INITIALIZING: 1,
-    PLAYING: 2,
-    PAUSED_EYES_OPEN: 3,
-    PROCESSING_TURN: 4
+    PLAYING_NARRATION: 2, // Audio speaking, input blocked
+    PLAYING_LISTENING: 3, // Waiting for gesture
+    PAUSED_EYES_OPEN: 4,
+    PROCESSING_AI: 5
 };
 
 let currentState = appState.WAITING_START;
+let previousState = appState.WAITING_START; // To restore after pause
+let listeningTimer = null;
 let vision, audio, narrator;
 
 const ui = {
@@ -72,6 +75,7 @@ function startGame() {
 
     // Set state to PAUSED so that closing eyes triggers the start
     currentState = appState.PAUSED_EYES_OPEN;
+    previousState = appState.PLAYING_NARRATION; 
     console.log("Game Started. Waiting for eyes to close...");
 }
 
@@ -85,60 +89,116 @@ function handleEyeStatus(isClosed) {
         document.body.classList.remove('eyes-open');
         
         if (currentState === appState.PAUSED_EYES_OPEN) {
-            // Resume
-            currentState = appState.PLAYING;
+            // Resume based on where we left off
+            // If we were listening, restart the listening phase
+            // If we were processing or narrating, resume that
             audio.resumeAmbience();
-            audio.resumeSpeech(); // Resume TTS if it was playing
+            audio.resumeSpeech();
             
-            // If we haven't started the story yet, start it now
             if (narrator.history.length === 0) {
-                advanceStory(null);
+                // First run
+                processTurn(null);
+            } else if (previousState === appState.PLAYING_LISTENING) {
+                startListeningPhase();
+            } else {
+                currentState = previousState;
             }
         }
     } else {
-        // Eyes Opened
+        // Eyes Opened - PAUSE EVERYTHING
         document.body.classList.remove('eyes-closed');
         document.body.classList.add('eyes-open');
         
-        if (currentState === appState.PLAYING || currentState === appState.PROCESSING_TURN) {
+        if (currentState !== appState.PAUSED_EYES_OPEN) {
+            previousState = currentState;
             currentState = appState.PAUSED_EYES_OPEN;
+            
+            // Stop timers
+            if (listeningTimer) {
+                clearTimeout(listeningTimer);
+                listeningTimer = null;
+            }
+
             audio.playGlitch();
             audio.pauseAmbience();
-            audio.pauseSpeech(); // Pause TTS cleanly to resume later
+            audio.pauseSpeech();
         }
     }
 }
 
 function handleGesture(gestureName) {
-    // Only accept gestures if playing and not currently speaking/processing
-    if (currentState !== appState.PLAYING) return;
-    if (audio.isSpeaking) return; // Don't interrupt narrator
+    // Only accept gestures if we are strictly in the listening phase
+    if (currentState !== appState.PLAYING_LISTENING) return;
 
-    // Visual feedback (briefly visible if user peeks, but mostly for debug)
+    // Visual feedback
     showFeedback(`Action: ${gestureName}`);
     audio.playConfirm();
+    
+    // Cancel the "silence" timer
+    if (listeningTimer) {
+        clearTimeout(listeningTimer);
+        listeningTimer = null;
+    }
 
-    // Send to AI
-    advanceStory(`I perform the action: ${gestureName}`);
+    // Process
+    processTurn(`I perform the action: ${gestureName}`);
 }
 
 // --- Game Logic ---
 
-async function advanceStory(userAction) {
-    currentState = appState.PROCESSING_TURN;
-    
-    // Slight delay for effect
-    showFeedback("Listening...");
+async function processTurn(userAction) {
+    currentState = appState.PROCESSING_AI;
+    showFeedback("Thinking...");
     
     // Get AI response
     const text = await narrator.generateResponse(userAction);
     
-    // Check if eyes are still closed before speaking
-    if (vision.eyesClosed) {
-        currentState = appState.PLAYING;
-        await audio.speak(text);
-        showFeedback("Waiting for action...");
+    // We only proceed if eyes are still closed (or if we handle pause checks inside)
+    // But since generateResponse is async, state might have changed to PAUSED.
+    if (currentState === appState.PAUSED_EYES_OPEN) {
+        // If paused while thinking, we just wait. The resume logic handles the rest? 
+        // No, we need to handle the output.
+        // We'll update the previousState so when they resume, it speaks.
+        previousState = appState.PLAYING_NARRATION;
+        // Queue the speech logic? Simplest is to just wait for resume.
+        // However, we have the text now.
+        // Let's force state to narration if closed, else let handleEyeStatus pick it up.
+        if (vision.eyesClosed) {
+             currentState = appState.PLAYING_NARRATION;
+             playNarrative(text);
+        }
+    } else {
+        currentState = appState.PLAYING_NARRATION;
+        playNarrative(text);
     }
+}
+
+async function playNarrative(text) {
+    showFeedback("Speaking...");
+    await audio.speak(text);
+    
+    // After speaking, check if we should listen (and eyes still closed)
+    if (currentState === appState.PLAYING_NARRATION && vision.eyesClosed) {
+        startListeningPhase();
+    }
+}
+
+function startListeningPhase() {
+    currentState = appState.PLAYING_LISTENING;
+    showFeedback("Listening (3s)...");
+    
+    // Allow fresh gestures
+    vision.resetGestureCooldown();
+    audio.playCue(); // Sound indicating "Your turn"
+
+    if (listeningTimer) clearTimeout(listeningTimer);
+    
+    listeningTimer = setTimeout(() => {
+        if (currentState === appState.PLAYING_LISTENING) {
+            console.log("Listening timeout - Silence detected");
+            processTurn("I stay silent and do nothing.");
+        }
+    }, 3500); // 3.5 seconds to be generous
 }
 
 function showFeedback(text) {
