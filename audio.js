@@ -10,6 +10,8 @@ export class AudioManager {
         
         this.currentSpeech = null; // Holds the TTS audio object
         this.isSpeaking = false;
+        this.speechPaused = false; // Tracks if speech is temporarily halted
+        this.playbackAllowed = true; // Gate for new speech
     }
 
     startAmbience() {
@@ -36,11 +38,14 @@ export class AudioManager {
     }
 
     async speak(text) {
+        // Stop any previous speech completely
         if (this.currentSpeech) {
             this.currentSpeech.pause();
+            this.currentSpeech = null;
         }
 
         this.isSpeaking = true;
+        this.speechPaused = false;
         
         try {
             // Using a mysterious voice ID for the "Guide"
@@ -54,9 +59,17 @@ export class AudioManager {
             return new Promise((resolve) => {
                 this.currentSpeech.onended = () => {
                     this.isSpeaking = false;
+                    this.speechPaused = false;
+                    this.currentSpeech = null;
                     resolve();
                 };
-                this.currentSpeech.play();
+                
+                // Only play if we are still allowed to (didn't pause while fetching)
+                if (this.playbackAllowed) {
+                    this.currentSpeech.play();
+                } else {
+                    this.speechPaused = true;
+                }
             });
         } catch (e) {
             console.error("TTS Error", e);
@@ -65,11 +78,31 @@ export class AudioManager {
         }
     }
 
+    // Temporary pause (resumeable)
+    pauseSpeech() {
+        this.playbackAllowed = false;
+        if (this.currentSpeech && !this.currentSpeech.paused) {
+            this.currentSpeech.pause();
+            this.speechPaused = true;
+        }
+    }
+
+    // Resume from where left off
+    resumeSpeech() {
+        this.playbackAllowed = true;
+        if (this.currentSpeech && this.speechPaused) {
+            this.currentSpeech.play();
+            this.speechPaused = false;
+        }
+    }
+
+    // Hard stop
     stopSpeech() {
         if (this.currentSpeech) {
             this.currentSpeech.pause();
             this.currentSpeech = null;
         }
         this.isSpeaking = false;
+        this.speechPaused = false;
     }
 }

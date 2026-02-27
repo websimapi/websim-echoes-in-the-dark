@@ -17,10 +17,10 @@ export class VisionSystem {
         
         // Stability for eyes
         this.eyesClosedCounter = 0;
-        this.EYES_CLOSED_FRAMES = 8; // Require ~250ms of closed eyes to trigger
+        this.EYES_CLOSED_FRAMES = 6; // Faster reaction (~200ms)
 
         // Thresholds
-        this.EAR_THRESHOLD = 0.22; // Slightly stricter to avoid false positives
+        this.EAR_THRESHOLD = 0.26; // Increased to catch eyes that aren't perfectly shut (more forgiving)
         this.TURN_THRESHOLD = 0.15;
         this.NOD_THRESHOLD = 0.08; 
         

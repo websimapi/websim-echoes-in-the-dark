@@ -88,6 +88,8 @@ function handleEyeStatus(isClosed) {
             // Resume
             currentState = appState.PLAYING;
             audio.resumeAmbience();
+            audio.resumeSpeech(); // Resume TTS if it was playing
+            
             // If we haven't started the story yet, start it now
             if (narrator.history.length === 0) {
                 advanceStory(null);
@@ -102,7 +104,7 @@ function handleEyeStatus(isClosed) {
             currentState = appState.PAUSED_EYES_OPEN;
             audio.playGlitch();
             audio.pauseAmbience();
-            audio.stopSpeech(); // Stop narrating immediately
+            audio.pauseSpeech(); // Pause TTS cleanly to resume later
         }
     }
 }
