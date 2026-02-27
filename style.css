@@ -94,7 +94,7 @@ button:active {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scaleX(-1);
     min-width: 100%; 
     min-height: 100%;
     width: auto;
@@ -112,7 +112,7 @@ button:active {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scaleX(-1);
     width: 300px;
     height: 300px;
     opacity: 0.3;

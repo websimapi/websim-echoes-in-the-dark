@@ -69,7 +69,6 @@ function startGame() {
     audio.startAmbience();
     ui.status.innerText = "CLOSE YOUR EYES TO BEGIN";
     ui.status.style.display = 'block';
-    });
 }
 
 // --- Vision Callbacks ---

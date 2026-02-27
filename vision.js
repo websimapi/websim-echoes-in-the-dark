@@ -119,11 +119,12 @@ export class VisionSystem {
         const faceCenterY = (forehead.y + chin.y) / 2;
         const pitch = nose.y - faceCenterY; // Relative shift
 
-        // Note: Camera is usually mirrored
+        // Note: Camera input is typically unmirrored raw frames
+        // Turning head LEFT -> Nose x decreases -> Yaw negative
         if (yaw < -this.TURN_THRESHOLD) {
-            this.triggerGesture("Turn Head Right");
-        } else if (yaw > this.TURN_THRESHOLD) {
             this.triggerGesture("Turn Head Left");
+        } else if (yaw > this.TURN_THRESHOLD) {
+            this.triggerGesture("Turn Head Right");
         } else if (nose.y < (forehead.y + chin.y)/2 - this.NOD_THRESHOLD) {
              // Look Up
              this.triggerGesture("Look Up");
