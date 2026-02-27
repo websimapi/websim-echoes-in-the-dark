@@ -44,19 +44,31 @@ async function init() {
 
         await vision.init();
 
-        // Give it a moment to stabilize
-        setTimeout(() => {
-            ui.intro.classList.remove('active');
-            ui.intro.classList.add('hidden');
-            ui.game.classList.remove('hidden');
-            ui.game.classList.add('active');
-            
-            // Start Game Loop logic
-            // Wait for initial eye closure to start the story
-            audio.startAmbience();
-            ui.status.innerText = "CLOSE YOUR EYES TO BEGIN";
-            ui.status.style.display = 'block';
-        }, 2000);
+        // Wait for face detection loop
+        checkFaceDetection();
+    });
+}
+
+function checkFaceDetection() {
+    if (vision.faceDetected) {
+        ui.loading.innerHTML = "Face Detected.<br>Calibrating...";
+        setTimeout(startGame, 1000);
+    } else {
+        ui.loading.innerHTML = "Looking for face...<br>Please look at the camera.";
+        requestAnimationFrame(checkFaceDetection);
+    }
+}
+
+function startGame() {
+    ui.intro.classList.remove('active');
+    ui.intro.classList.add('hidden');
+    ui.game.classList.remove('hidden');
+    ui.game.classList.add('active');
+    
+    // Start Game Loop logic
+    audio.startAmbience();
+    ui.status.innerText = "CLOSE YOUR EYES TO BEGIN";
+    ui.status.style.display = 'block';
     });
 }
 

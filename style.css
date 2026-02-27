@@ -14,6 +14,12 @@ body {
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -21,6 +27,8 @@ body {
 
 .screen {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     display: flex;
@@ -84,11 +92,20 @@ button:active {
 /* Video/Canvas positioning - purely for logic, hidden or dimmed in UI */
 #input_video {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100px;
-    opacity: 0; /* Hidden from view, but active */
-    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%; 
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    opacity: 0; /* Default hidden */
+    z-index: 1;
+    object-fit: cover;
+}
+
+.screen.preview #input_video {
+    opacity: 0.2;
 }
 
 #output_canvas {
@@ -98,9 +115,10 @@ button:active {
     transform: translate(-50%, -50%);
     width: 300px;
     height: 300px;
-    opacity: 0.3; /* Subtle visualization of tracking */
-    border: 1px solid #333;
+    opacity: 0.3;
+    border: 1px solid var(--accent);
     border-radius: 50%;
+    z-index: 5;
 }
 
 #status-overlay {
