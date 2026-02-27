@@ -14,6 +14,7 @@ const appState = {
 let currentState = appState.WAITING_START;
 let previousState = appState.WAITING_START; // To restore after pause
 let listeningTimer = null;
+let detectedGestures = new Set(); // Accumulate gestures during listening phase
 let vision, audio, narrator;
 
 const ui = {
@@ -130,18 +131,23 @@ function handleGesture(gestureName) {
     // Only accept gestures if we are strictly in the listening phase
     if (currentState !== appState.PLAYING_LISTENING) return;
 
-    // Visual feedback
-    showFeedback(`Action: ${gestureName}`);
-    audio.playConfirm();
+    // Split compound gestures if comma separated
+    const parts = gestureName.split(', ');
+    let newData = false;
     
-    // Cancel the "silence" timer
-    if (listeningTimer) {
-        clearTimeout(listeningTimer);
-        listeningTimer = null;
-    }
+    parts.forEach(g => {
+        if (!detectedGestures.has(g)) {
+            detectedGestures.add(g);
+            newData = true;
+        }
+    });
 
-    // Process
-    processTurn(`I perform the action: ${gestureName}`);
+    if (newData) {
+        // Visual feedback
+        const allGestures = Array.from(detectedGestures).join(', ');
+        showFeedback(`${allGestures}`);
+        audio.playConfirm();
+    }
 }
 
 // --- Game Logic ---
@@ -185,6 +191,7 @@ async function playNarrative(text) {
 
 function startListeningPhase() {
     currentState = appState.PLAYING_LISTENING;
+    detectedGestures.clear(); // Reset gestures for this turn
     showFeedback("Listening (3s)...");
     
     // Allow fresh gestures
@@ -195,16 +202,28 @@ function startListeningPhase() {
     
     listeningTimer = setTimeout(() => {
         if (currentState === appState.PLAYING_LISTENING) {
-            console.log("Listening timeout - Silence detected");
-            processTurn("I stay silent and do nothing.");
+            
+            const actions = Array.from(detectedGestures);
+            if (actions.length > 0) {
+                const actionString = actions.join(" and ");
+                console.log("Turn processed with actions:", actionString);
+                processTurn(`I perform the action(s): ${actionString}`);
+            } else {
+                console.log("Listening timeout - Silence detected");
+                processTurn("I stay silent and do nothing.");
+            }
         }
-    }, 3500); // 3.5 seconds to be generous
+    }, 4000); // 4 seconds listening window
 }
 
+let feedbackTimer = null;
 function showFeedback(text) {
     ui.gesture.innerText = text;
     ui.gesture.style.opacity = 1;
-    setTimeout(() => {
+    
+    if (feedbackTimer) clearTimeout(feedbackTimer);
+    
+    feedbackTimer = setTimeout(() => {
         ui.gesture.style.opacity = 0;
     }, 2000);
 }

@@ -34,7 +34,7 @@ export class Narrator {
         4. If the player stays SILENT (no gesture), interpret this as hesitation, fear, or waiting. React to their silence.
         5. End with a subtle choice (e.g., "The wind pulls left, but the heat comes from the right", "Shall we nod to agree?").
         6. Use "You" to address the player.
-        7. The player interacts by: Turning Head LEFT, Turning Head RIGHT, NODDING, LOOKING UP, or SILENCE.
+        7. The player interacts by: Head Gestures (Nod, Shake, Look Up/Down), Hand Signs (Finger Counting, Pointing), Facial Expressions (Smile, Frown), or Body Dodging (Left/Right).
         
         Start by welcoming them into the void and describing the first sensation based on the seeds.
         `;
